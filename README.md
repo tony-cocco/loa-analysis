@@ -58,7 +58,10 @@ Copy `gates.example.json` to `gates.json`. It's gitignored, so your character na
 ## Notes
 
 - **nDPS is the main metric.** It strips external buffs, so how well your supports covered you doesn't change it.
-- **The logs don't include gems, tripods or individual gear pieces**, so lower damage per cast can come from gear as well as play.
+- **The logs don't include gems or individual gear pieces**, so lower damage per cast can come from gear as well as play.
+  Tripods are recorded per skill (`tripodIndex`).
+- **Time sitting ready** comes from each skill's `timeAvailable`. Only some uploads record it, so it's compared against
+  just the peers that have it.
 - **Hard-coded for this build:** the Berserker skill and Ark Passive lists in `build_report.py`. Other builds need those
   changed, or can use `PROMPT.md`.
 - **lostark.bible rate-limits downloads (HTTP 429).** `fetch_gate.py` waits between requests and backs off when limited.

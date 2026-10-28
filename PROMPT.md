@@ -30,6 +30,8 @@ I want to understand why my lostark.bible percentile is what it is, and where I 
 - Skill by skill for my main skills: damage share, casts per minute, hits per cast, damage per hit, **damage per cast**, and crit/back-attack rate. When hits per cast differ sharply from the top runs (a different tripod, or hits connecting differently), compare by damage per cast instead of per hit. Exclude once-a-fight skills from casts-per-minute conclusions.
 - Build choices: group peers by engravings and by Ark Passive nodes (Evolution tier 2, the Enlightenment tiers) and show the median nDPS for each choice, with mine highlighted. Get Ark Passive node names from the site's JS chunks, not from memory. Say that these groups are small and correlational.
 - Write the takeaways from the computed numbers rather than hard-coding them, so they stay correct when I swap in new logs.
-- Say plainly what the logs can't show: gems, tripods and individual gear pieces.
+- Time sitting ready: each skill's `timeAvailable` (ms off cooldown but not pressed) as a share of the fight. Only some uploads record it (others are 0 or missing), so compare only against peers that have it, and say how many that is.
+- Tripods are in the log per skill (`tripodIndex`); check mine against the field before blaming them.
+- Say plainly what the logs can't show: gems and individual gear pieces.
 
 **Output.** One simple, self-contained HTML page per gate (`report-gate1.html`, `report-gate2.html`, ...) with tabs linking the gates. Include summary tiles, a dot chart of the bracket with my run highlighted, the tables above with red/green deltas against the top 10, a takeaways list, and an "all runs" table linking each log. Support light and dark mode, and don't use external dependencies. Keep the gate definitions in a `gates.json` (boss, difficulty, my log id, CP range, patch), plus a fetch script and a build script, so I can rerun with new logs.

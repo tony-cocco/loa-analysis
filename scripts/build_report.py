@@ -46,6 +46,9 @@ def load_players():
                     'hpc': s['hits'] / s['casts'] if s['casts'] else 0,
                     'dph': s['totalDamage'] / s['hits'] if s['hits'] else 0,
                     'dpc': s['totalDamage'] / s['casts'] if s['casts'] else 0,
+                    # ms the skill was off cooldown but not pressed; only some uploads record it
+                    'ready': (s.get('timeAvailable') or 0) / 1000,
+                    'readyPct': (s.get('timeAvailable') or 0) / 1000 / dur,
                     'ba': s['backAttackDamage'] / s['totalDamage'] if s['totalDamage'] else 0,
                 }
             ark = {x['id']: x['lv'] for t in ('evolution', 'enlightenment', 'leap') for x in p['arkPassiveData'][t]}
@@ -59,6 +62,7 @@ def load_players():
                 'dead': sum(x['deadFor'] for x in ds.get('deathInfo', [])) / 1000,
                 'incap': sum(i['duration'] for i in ds.get('incapacitations', [])) / 1000,
                 'engr': sorted(p['engravingData']), 'ark': ark, 'skills': skills,
+                'readyTracked': any(s.get('timeAvailable') for s in p['skills'].values()),
             })
     return rows
 
@@ -216,6 +220,40 @@ from the <a href="{STATS_URL}">bracket's sample runs</a>. Bracket stats as of {e
     a('</table></div>')
     bleed_me, bleed_top = me['skills'].get('Bleed', {}).get('hits', 0), med(r['skills']['Bleed']['hits'] for r in top if 'Bleed' in r['skills'])
 
+    # Time sitting ready: only compare against peers whose uploads recorded it.
+    tracked = [r for r in peers if r['readyTracked']]
+    ready_top = tracked[:10]
+    ready_rows, ready_behind = [], []
+    if me['readyTracked'] and tracked:
+        for n, m, _ in skill_rows:
+            if n in ('Basic Attack', 'Bleed') or m['casts'] < 5:
+                continue
+            # A 0 means the uploader didn't record this skill, not that it was never ready.
+            vals = [r['skills'][n]['readyPct'] for r in tracked if r['skills'].get(n, {}).get('readyPct')]
+            if len(vals) < 3 or not m['readyPct']:
+                continue
+            t = med(r['skills'][n]['readyPct'] for r in ready_top if r['skills'].get(n, {}).get('readyPct'))
+            rank = sorted(vals + [m['readyPct']]).index(m['readyPct']) + 1
+            ready_rows.append((n, m, t, med(vals), rank, len(vals) + 1))
+            if m['readyPct'] - t > 0.05:
+                ready_behind.append((n, m['readyPct'] - t))
+    a('<h2>Time sitting ready</h2>')
+    if ready_rows:
+        a(f'<p class="muted">How long each skill was off cooldown but not pressed, as a share of the fight. Only {len(tracked)} of '
+          f'{len(peers)} peers\' uploads record this, so the comparison uses just those; "top" is the best {len(ready_top)} of them by nDPS. '
+          'Rank 1 means the least time sitting ready.</p>')
+        a('<div class="card"><table><tr><th>Skill</th><th class="num">You</th><th class="num">Top</th><th class="num">Tracked median</th>'
+          '<th class="num">You − top</th><th class="num">Seconds ready</th><th class="num">Rank</th></tr>')
+        for n, m, t, md, rank, of in sorted(ready_rows, key=lambda x: x[2] - x[1]['readyPct']):
+            d = m['readyPct'] - t
+            cls = 'bad' if d > 0.05 else ('good' if d < -0.05 else '')
+            a(f'<tr><td>{esc(n)}</td><td class="num">{pct(m["readyPct"], 0)}</td><td class="num">{pct(t, 0)}</td>'
+              f'<td class="num">{pct(md, 0)}</td><td class="num {cls}">{d * 100:+.0f} pts</td>'
+              f'<td class="num">{m["ready"]:.0f}s</td><td class="num">{rank} / {of}</td></tr>')
+        a('</table></div>')
+    else:
+        a('<p class="muted">Your upload for this log doesn\'t record how long skills sat ready.</p>')
+
     # Takeaways are derived from the skill table so they hold for any gate.
     rotation = []
     for n, m, users in skill_rows:
@@ -252,7 +290,10 @@ from the <a href="{STATS_URL}">bracket's sample runs</a>. Bracket stats as of {e
       f'fight length {mmss(me["dur"])} vs {mmss(med(r["dur"] for r in top))}.</li>')
     if fine:
         a(f'<li><b>At or better than the peer median:</b> {", ".join(fine)}.</li>')
-    a('<li><b>Not in the logs:</b> gems, tripods and gear pieces. These could explain lower damage per cast as easily as play could.</li>')
+    if ready_rows:
+        a('<li><b>Time sitting ready:</b> ' + (f'more than the top tracked players on {", ".join(f"{n} ({d * 100:+.0f} pts)" for n, d in sorted(ready_behind, key=lambda x: -x[1]))}.'
+                                               if ready_behind else 'in line with the top tracked players.') + '</li>')
+    a('<li><b>Not in the logs:</b> gems and gear pieces. These could explain lower damage per cast as easily as play could.</li>')
     a('</ul></div>')
 
     a('<h2>Build choices vs nDPS</h2><p class="muted">Median nDPS of peers grouped by each choice. Groups are small, so read these as '
