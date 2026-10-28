@@ -1,0 +1,24 @@
+{
+  "character": "YourCharacter",
+  "spec": "Mayhem",
+  "gates": {
+    "gate1": {
+      "label": "Gate 1",
+      "boss": "Belgardin, Arbiter of Death",
+      "difficulty": "Nightmare",
+      "log": "LOG_ID",
+      "minCP": 7000,
+      "maxCP": 7500,
+      "patch": "sep26"
+    },
+    "gate2": {
+      "label": "Gate 2",
+      "boss": "Phaetus An Kragma",
+      "difficulty": "Hard",
+      "log": "LOG_ID",
+      "minCP": 6500,
+      "maxCP": 7000,
+      "patch": "sep26"
+    }
+  }
+}

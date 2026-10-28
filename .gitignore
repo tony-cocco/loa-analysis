@@ -1,0 +1,12 @@
+# Your character name and log ids
+gates.json
+
+# Downloaded logs and bracket stats (large, and contain other players' data)
+data/
+
+# Generated reports (rebuild with scripts/build_report.py)
+report-*.html
+
+__pycache__/
+*.pyc
+.DS_Store
