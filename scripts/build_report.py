@@ -28,14 +28,21 @@ ARK = {1010100: 'Crit', 1010400: 'Swiftness', 1020200: 'Illicit Spell', 1020300:
 
 
 def load_players():
+    # logs/ keeps older downloads too; only use the current sample set plus your current log.
+    samples = json.load(open(os.path.join(DATA, 'samples.json')))
+    wanted = {e['id'] for v in samples.values() for e in v} | {MY_LOG}
     rows = []
-    for f in sorted(glob.glob(os.path.join(DATA, 'logs', '*.json'))):
-        info = json.load(open(f))[1]['data']['encounterInfo']
+    for i in sorted(wanted):
+        info = json.load(open(os.path.join(DATA, 'logs', i + '.json')))[1]['data']['encounterInfo']
         enc = info['encounter']
+        if enc['currentBossName'] != BOSS or enc['difficulty'] != DIFF:
+            continue
         dur = enc['duration'] / 1000
         for p in enc['entityList']:
             if p['entityType'] != 'PLAYER' or p.get('spec') != SPEC:
                 continue
+            if p['name'] == ME and info['id'] != MY_LOG:
+                continue  # your other runs aren't peers
             ds, ss = p['damageStats'], p['skillStats']
             dmg = ds['damageDealt']
             skills = {}
